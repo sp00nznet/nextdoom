@@ -1,0 +1,8 @@
+build*/
+original/
+src/recomp/gen/
+analysis/d32_funcs.json
+__pycache__/
+run*.log
+shot*.bmp
+shot*.png
