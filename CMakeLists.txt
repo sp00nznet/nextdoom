@@ -8,9 +8,9 @@ if(NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
 endif()
 set(CMAKE_C_STANDARD 11)
 
-set(PCRECOMP "${CMAKE_SOURCE_DIR}/../pcrecomp-macho" CACHE PATH "pcrecomp checkout")
+set(PCRECOMP "${CMAKE_SOURCE_DIR}/../pcrecomp" CACHE PATH "pcrecomp checkout")
 if(NOT EXISTS "${PCRECOMP}/runtime/nextstep/ns_runtime.h")
-  message(FATAL_ERROR "pcrecomp (with runtime/nextstep) not found at ${PCRECOMP}; pass -DPCRECOMP=<path>.")
+  message(FATAL_ERROR "pcrecomp not found at ${PCRECOMP} -- clone https://github.com/sp00nznet/pcrecomp next to this repo or pass -DPCRECOMP=<path>.")
 endif()
 
 file(GLOB GEN_SOURCES CONFIGURE_DEPENDS "${CMAKE_SOURCE_DIR}/src/recomp/gen/*.c")

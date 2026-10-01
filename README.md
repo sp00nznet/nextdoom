@@ -10,8 +10,12 @@ lifted to C and compiled into a new program; the NeXTSTEP it expects
 runtime on SDL2. No emulator.
 
 Built on the [pcrecomp](https://github.com/sp00nznet/pcrecomp) toolchain:
-its Mach-O front end (`tools/macho`) and NeXTSTEP host runtime
-(`runtime/nextstep`), currently on pcrecomp's `feat/macho` branch.
+its Mach-O front end
+([`tools/macho`](https://github.com/sp00nznet/pcrecomp/tree/main/tools/macho)) and
+NeXTSTEP host runtime
+([`runtime/nextstep`](https://github.com/sp00nznet/pcrecomp/tree/main/runtime/nextstep)),
+both on pcrecomp's `main` since
+[#25](https://github.com/sp00nznet/pcrecomp/pull/25).
 
 **Generated source is not distributed.** You supply your own NeXTSTEP 3.3
 install; the lifter runs on your machine and writes the C into a gitignored
@@ -39,18 +43,22 @@ game's own code, recompiled.
 
 ## Build
 
+Clone [pcrecomp](https://github.com/sp00nznet/pcrecomp) next to this repo
+(`../pcrecomp`; elsewhere, set `PCRECOMP` for the Python scripts and pass
+`-DPCRECOMP=<path>` to CMake).
+
 `original/` needs `Doom.app/` and `shlib/` (from `/usr/shlib`) from a
 NeXTSTEP 3.3 **Intel** install. pcrecomp's `tools/macho/ufs.py` reads them
 straight off a NeXT disk image:
 
 ```bash
-UFS=../pcrecomp-macho/tools/macho/ufs.py
+UFS=../pcrecomp/tools/macho/ufs.py
 MSYS_NO_PATHCONV=1 python $UFS hd.img get /LocalApps/Doom.app original/Doom.app
 MSYS_NO_PATHCONV=1 python $UFS hd.img get /usr/shlib original/shlib
 
 python run_lift.py                  # -> src/recomp/gen (676 functions, ~93k lines)
 export PATH=/c/msys64/mingw64/bin:$PATH
-cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc -DPCRECOMP=../pcrecomp-macho
+cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc
 cmake --build build
 ./build/nextdoom.exe
 ```

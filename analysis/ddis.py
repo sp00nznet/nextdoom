@@ -1,6 +1,6 @@
 """ddis.py VA [count] -- disassemble Doom's i386 slice with import/selector names."""
 import sys, os, json
-sys.path[:0] = [os.path.join(os.path.dirname(__file__), '..', '..', 'pcrecomp-macho', 'tools', 'macho')]
+sys.path[:0] = [os.path.join(os.environ.get('PCRECOMP') or os.path.join(os.path.dirname(__file__), '..', '..', 'pcrecomp'), 'tools', 'macho')]
 from macho import MachO, slices
 from survey import load_shlibs, import_map
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32

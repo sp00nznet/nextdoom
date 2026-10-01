@@ -17,7 +17,7 @@ tools/macho:
 import argparse, os, sys, time
 
 _HERE = os.path.dirname(os.path.abspath(__file__))
-_PC = os.path.join(os.environ.get('PCRECOMP') or os.path.join(_HERE, '..', 'pcrecomp-macho'), 'tools')
+_PC = os.path.join(os.environ.get('PCRECOMP') or os.path.join(_HERE, '..', 'pcrecomp'), 'tools')
 sys.path[:0] = [os.path.join(_PC, d) for d in ('lift', 'disasm', 'macho')]
 
 from capstone import Cs, CS_ARCH_X86, CS_MODE_32            # noqa: E402
