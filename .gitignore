@@ -1,7 +1,15 @@
-build*/
+# --- Game and system files: never committed (REPO_RULES section 3) ---
 original/
+*.img
+*.iso
+
+# --- Derived from the game binary: never committed ---
 src/recomp/gen/
-analysis/d32_funcs.json
+analysis/*.json
+
+# --- Build output and scratch ---
+build*/
 __pycache__/
 run*.log
 *.bmp
+*.mp4

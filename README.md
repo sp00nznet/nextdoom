@@ -15,7 +15,8 @@ its Mach-O front end
 NeXTSTEP host runtime
 ([`runtime/nextstep`](https://github.com/sp00nznet/pcrecomp/tree/main/runtime/nextstep)),
 both on pcrecomp's `main` since
-[#25](https://github.com/sp00nznet/pcrecomp/pull/25).
+[#25](https://github.com/sp00nznet/pcrecomp/pull/25), and following its shared
+house style for recompilation projects.
 
 **Generated source is not distributed.** You supply your own NeXTSTEP 3.3
 install; the lifter runs on your machine and writes the C into a gitignored
@@ -23,14 +24,22 @@ folder.
 
 ## Status
 
-**v0.1 — it boots and plays the attract demo.**
+**v0.1.0 — alpha. It boots and plays the attract demo.**
 
 crt0, `main`, the nib, `appDidInit:` and D_DoomMain all run as recompiled
-code: the title screen comes up and the demos play — the 3D renderer
-(including the two hand-written assembly column/span drawers), sprites,
-status bar and palette effects. Keyboard is wired through `VGAView
-keyDown:/keyUp:` but not yet play-tested. Everything on screen below is the
-game's own code, recompiled.
+code: the title screen comes up and the demos play. Everything on screen below
+is the game's own code, recompiled.
+
+| Part | State |
+|---|---|
+| Lift | 676 functions, 0 errors, every body decodes onto the next start |
+| 3D renderer, sprites, status bar, palette effects | Working (attract demos) |
+| `R_DrawColumn` / `R_DrawSpan` (hand-written assembly) | Working |
+| Keyboard | Wired through `VGAView keyDown:/keyUp:`, not play-tested |
+| Mouse, sound, window scaling, netgames | Not yet ([roadmap](ROADMAP.md)) |
+| Headless `--record`, conformance harness | Not yet ([roadmap](ROADMAP.md)) |
+
+## Screenshots
 
 | | |
 |---|---|
@@ -41,58 +50,86 @@ game's own code, recompiled.
 
 ![The attract demo, later](docs/screenshots/attract.gif)
 
-## Build
+## Getting Started
 
-Clone [pcrecomp](https://github.com/sp00nznet/pcrecomp) next to this repo
-(`../pcrecomp`; elsewhere, set `PCRECOMP` for the Python scripts and pass
-`-DPCRECOMP=<path>` to CMake).
+You need a **NeXTSTEP 3.3 Intel** install (a disk image is fine) with
+`/LocalApps/Doom.app` on it. Nothing else from it is used except `/usr/shlib`.
 
-`original/` needs `Doom.app/` and `shlib/` (from `/usr/shlib`) from a
-NeXTSTEP 3.3 **Intel** install. pcrecomp's `tools/macho/ufs.py` reads them
-straight off a NeXT disk image:
+### Step by step
 
-```bash
-UFS=../pcrecomp/tools/macho/ufs.py
-MSYS_NO_PATHCONV=1 python $UFS hd.img get /LocalApps/Doom.app original/Doom.app
-MSYS_NO_PATHCONV=1 python $UFS hd.img get /usr/shlib original/shlib
+Prerequisites, on Windows 10 or 11:
 
-python run_lift.py                  # -> src/recomp/gen (676 functions, ~93k lines)
-export PATH=/c/msys64/mingw64/bin:$PATH
-cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc
-cmake --build build
-./build/nextdoom.exe
-```
+- [MSYS2](https://www.msys2.org/) with the mingw64 toolchain, SDL2, CMake and
+  Ninja (tested with gcc 15.2, CMake 4.2, Ninja 1.13):
+  `pacman -S mingw-w64-x86_64-gcc mingw-w64-x86_64-SDL2 mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja`
+- Python 3.11+ with `capstone` (tested with 3.13 and capstone 5.0.7):
+  `py -3 -m pip install capstone`
+- A checkout of [pcrecomp](https://github.com/sp00nznet/pcrecomp) next to this
+  one (`../pcrecomp`), or anywhere, named by `PCRECOMP` for the Python scripts
+  and `-DPCRECOMP=<path>` for CMake.
 
-Needs Python 3 with `capstone`, MSYS2 mingw64 gcc, SDL2 and CMake.
+Commands are for a Git Bash or MSYS2 shell, from this folder:
 
-Diagnostics:
+1. Copy the game out of the disk image with pcrecomp's UFS reader:
+   ```bash
+   UFS=../pcrecomp/tools/macho/ufs.py
+   MSYS_NO_PATHCONV=1 py -3 $UFS hd.img get /LocalApps/Doom.app original/Doom.app
+   MSYS_NO_PATHCONV=1 py -3 $UFS hd.img get /usr/shlib original/shlib
+   ```
+2. Lift:
+   ```bash
+   py -3 run_lift.py
+   ```
+   Expected:
+   ```
+   [*] code=0x00003990-0x00022E50 entry=0x00003990 functions=676 imports=59
+   ============================================================
+     functions 676   errors 0   files 3   lines 92,838   1.3s
+   ============================================================
+   ```
+3. Build:
+   ```bash
+   export PATH=/c/msys64/mingw64/bin:$PATH
+   cmake -S . -B build -G Ninja -DCMAKE_C_COMPILER=gcc
+   cmake --build build
+   ```
+   Expected: `build/nextdoom.exe`, about 1.4 MB.
+4. Run: `./build/nextdoom.exe`. The window opens on the title screen and the
+   attract demos start.
+
+Usual trip-ups: `py` vs `python` (use the `py` launcher; the Microsoft Store
+`python` alias is not a real interpreter), `MSYS_NO_PATHCONV=1` (without it
+MSYS rewrites `/LocalApps/...` into a Windows path), and a `PATH` change that
+needs a new terminal.
+
+A one-click `Setup.cmd` quick start is on the [roadmap](ROADMAP.md).
+
+## Usage
+
+`./build/nextdoom.exe` runs the game from `original/` (the path is baked in at
+configure time). Diagnostics are environment variables:
 
 | variable | effect |
 |---|---|
 | `NS_TRACE=1` | log every import bound and every message sent |
 | `NS_SHOT=first,count,path%05d.bmp` | save frames `first`..`first+count-1` (how these screenshots were made) |
 
-## How it fits together
+```bash
+NS_SHOT=400,1,shot%05d.bmp ./build/nextdoom.exe
+```
 
-* **Functions.** `MachO.gcc_functions()`: NeXT's gcc gives every function a
-  frame, keeps switch arms in the body and jump tables in `__const`, so
-  prologue-to-next-prologue is exact. The two frameless assembly renderers
-  (`R_DrawColumn`, `R_DrawSpan`) are found through the pointers Doom stores
-  to them. `run_lift.py` fails if any body does not decode onto the next start.
-* **Imports.** Calls into libsys/libNeXT lift to `RECOMP_ICALL(slot)`. The
-  shlibs are mapped at their real addresses; the runtime names each slot
-  from the shlib's own symbol table and binds the host shim by that name.
-* **Objective-C.** The classes are the images' own `__OBJC` data, so AppKit's
-  hierarchy and ivar layout are the real ones; host methods are bound by
-  symbol (`-[Window setContentView:]`) exactly like C imports.
-* **Startup.** `[Application new]`, `loadNibSection:` (which only has to wire
-  `DRCoord` as NXApp's delegate), `[NXApp run]` → `appDidInit:` → D_DoomMain,
-  which never returns and pumps its own events through `getNextEvent:`.
-* **Video.** The window reports 12-bit RGB; VGAView converts Doom's 8-bit
-  frame through its palette and `NXDrawBitmap` blits it to an SDL texture.
+## How it works
 
-## Next
+[docs/architecture.md](docs/architecture.md) covers the design: how the
+function catalog is found, how shlib imports and Objective-C methods bind to
+host shims, the startup path, and video.
 
-Play-test input, mouse, sound (libMedia), window scaling (the
-`scale1:/2:/4:` nib actions nothing sends yet), and netgames (sockets are
-stubbed to fail).
+## Building from source
+
+See *Step by step* above. `run_lift.py` and `CMakeLists.txt` document each step.
+
+## License
+
+MIT — see [LICENSE](LICENSE). This covers the code in this repository only.
+Doom is © id Software and NeXTSTEP is © NeXT / Apple; no game or system code
+or data is included.

@@ -13,6 +13,8 @@ tools/macho:
     the runtime (runtime/nextstep) binds each by its symbol name.
 
     py -3 run_lift.py [--exe original/Doom.app/Doom] [--out src/recomp/gen]
+
+Design: docs/architecture.md.
 """
 import argparse, os, sys, time
 
